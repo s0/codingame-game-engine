@@ -11,7 +11,6 @@ import java.io.PrintWriter;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -21,9 +20,12 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -55,6 +57,9 @@ import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
 
 class Renderer {
+
+    private static final int MAX_LEAGUES = 50;
+    private static final int MAX_PLAYERS = 8;
 
     public class MultipleResourceSupplier implements ResourceSupplier {
 
@@ -292,26 +297,284 @@ class Renderer {
         return paths;
     }
 
-    private void checkConfig(Path sourceFolderPath) throws IOException {
-        if (!sourceFolderPath.resolve("config").toFile().isDirectory()) {
-            throw new RuntimeException("Missing config directory.");
+    private ExportReport checkConfig(Path sourceFolderPath) throws IOException {
+        ExportReport exportReport = new ExportReport();
+        Path rootDir = sourceFolderPath.resolve("config");
+
+        if (!rootDir.toFile().isDirectory()) {
+            exportReport.addItem(ReportItemType.ERROR, "Missing config directory.");
+            return exportReport;
         }
-        File configFile = sourceFolderPath.resolve("config/config.ini").toFile();
-        if (!sourceFolderPath.resolve("config/config.ini").toFile().isFile()) {
-            throw new RuntimeException("Missing config.ini file.");
+
+        //Check leagues
+        boolean consecutiveLeague = true;
+        int nbLeagues = 0;
+        for (int i = 1; i < MAX_LEAGUES; i++) {
+            if (!sourceFolderPath.resolve("config/level" + i).toFile().isDirectory()) {
+                consecutiveLeague = false;
+            } else {
+                nbLeagues++;
+                if (!consecutiveLeague) {
+                    exportReport.addItem(ReportItemType.ERROR, "Folder level" + i + " must be consecutive with previous leagues");
+                    return exportReport;
+                }
+            }
         }
+        if (sourceFolderPath.resolve("config/level" + (MAX_LEAGUES + 1)).toFile().isDirectory()) {
+            exportReport.addItem(ReportItemType.ERROR, "Too many leagues (>" + MAX_LEAGUES + ")");
+            return exportReport;
+        }
+
+        boolean hasLeagues = nbLeagues != 0;
+
+        //If there is no league, only check files in config/
+        if (!hasLeagues) {
+            //Check config.ini
+            checkConfigIni(sourceFolderPath, exportReport, "");
+
+            //Check stub
+            checkStub(sourceFolderPath, exportReport, "");
+
+            //Check statement
+            checkStatement(sourceFolderPath, exportReport, "");
+
+            //Check Boss
+            checkBoss(sourceFolderPath, exportReport, "");
+
+            //Check League popups
+            checkLeaguePopups(sourceFolderPath, exportReport, "", false);
+            return exportReport;
+        } else {
+            for (int i = 1; i <= nbLeagues; i++) {
+                String filePath = "level" + i + "/";
+
+                //Check config.ini
+                ExportReport tmpReport = new ExportReport();
+                if (!checkConfigIni(sourceFolderPath, tmpReport, filePath)) {
+                    if (tmpReport.hasMandatoryFileMissing()) {
+                        exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit config.ini file from config directory");
+                        checkConfigIni(sourceFolderPath, exportReport, "");
+                    } else {
+                        exportReport.merge(tmpReport);
+                    }
+                }
+
+                //Check stub
+                tmpReport = new ExportReport();
+                if (!checkStub(sourceFolderPath, tmpReport, filePath)) {
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit stub.txt file from config directory.");
+                    checkStub(sourceFolderPath, exportReport, "");
+                } else {
+                    exportReport.merge(tmpReport);
+                }
+
+                //Check statement
+                tmpReport = new ExportReport();
+                if (!checkStatement(sourceFolderPath, tmpReport, filePath)) {
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit statement_en.html file from config directory.");
+                    checkStatement(sourceFolderPath, exportReport, "");
+                } else {
+                    exportReport.merge(tmpReport);
+                }
+
+                //Check Boss
+                tmpReport = new ExportReport();
+                if (!checkBoss(sourceFolderPath, tmpReport, filePath)) {
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit Boss.* file from config directory.");
+                    checkBoss(sourceFolderPath, exportReport, "");
+                } else {
+                    exportReport.merge(tmpReport);
+                }
+
+                //Check league popups
+                tmpReport = new ExportReport();
+                if (!checkLeaguePopups(sourceFolderPath, tmpReport, filePath, true)) {
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit Boss.* file from config directory.");
+                    checkLeaguePopups(sourceFolderPath, exportReport, "", true);
+                } else {
+                    exportReport.merge(tmpReport);
+                }
+            }
+        }
+        
+        exportReport.prettify();
+
+        return exportReport;
+    }
+
+    private boolean checkLeaguePopups(Path sourceFolderPath, ExportReport exportReport, String filePath, boolean hasLeagues) throws IOException {
+        String completeFilePath = "config/" + filePath + "welcome_en.html";
+        File stubFile = sourceFolderPath.resolve(completeFilePath).toFile();
+        if (!stubFile.isFile()) {
+            //Displays warning only if leagues are present
+            if (hasLeagues) {
+                exportReport.addItem(
+                    ReportItemType.WARNING, completeFilePath +
+                        ": Missing welcome_en.html file. To create one, follow the instructions on "
+                        + "<a href=\"#\">"
+                        + "To be stated</a>"
+                );
+            }
+            return false;
+        } else {
+            //Check if league popups images stated in html file exist
+            FileInputStream welcomeInput = new FileInputStream(stubFile);
+            String welcomeContent = "";
+            int content;
+            while ((content = welcomeInput.read()) != -1) {
+                welcomeContent += ((char) content);
+            }
+            Matcher imageMatcher = Pattern.compile("<\\s*img [^\\>]*src\\s*=\\s*([\"\\'])(.*?)\\1").matcher(welcomeContent);
+            List<String> imagesName = new ArrayList<>();
+
+            while (imageMatcher.find()) {
+                imagesName.add(imageMatcher.group(2));
+            }
+            welcomeInput.close();
+
+            //Check if images exist in arborescence
+            checkLeagueImages(sourceFolderPath, "config/" + filePath, imagesName);
+            if (!filePath.isEmpty() && !imagesName.isEmpty())
+                checkLeagueImages(sourceFolderPath, "config/", imagesName);
+
+            //Remaining images in list do not exist 
+            for (String imageName : imagesName) {
+                exportReport.addItem(ReportItemType.WARNING, "Missing " + imageName + " file used in " + completeFilePath);
+            }
+
+            return true;
+        }
+    }
+
+    private void checkLeagueImages(Path sourceFolderPath, String filePath, List<String> imagesName) throws IOException {
+        Files.list(sourceFolderPath.resolve(filePath)).forEach(p -> imagesName.remove(FilenameUtils.getName(p.toString())));
+    }
+
+    private boolean checkBoss(Path sourceFolderPath, ExportReport exportReport, String filePath) throws IOException {
+        String completeFolderPath = "config/" + filePath;
+        boolean hasBossFile = Files.list(sourceFolderPath.resolve(completeFolderPath)).filter(p -> {
+            String fileName = FilenameUtils.getName(p.toString());
+            Matcher bossMatcher = Pattern.compile("Boss\\..*").matcher(fileName);
+            return p.toFile().isFile() && bossMatcher.matches();
+
+        }).findFirst().isPresent();
+
+        if (!hasBossFile) {
+            exportReport.addItem(ReportItemType.MISSING_MANDATORY_FILE, "Missing " + completeFolderPath + "Boss.* file.");
+        }
+
+        return hasBossFile;
+    }
+
+    private boolean checkStatement(Path sourceFolderPath, ExportReport exportReport, String filePath) throws IOException {
+        return existsMandatoryFile(sourceFolderPath, exportReport, filePath, "statement_en.html");
+    }
+
+    private boolean existsMandatoryFile(Path sourceFolderPath, ExportReport exportReport, String filePath, String filename) {
+        String completeFilePath = "config/" + filePath + filename;
+        File fileToCheck = sourceFolderPath.resolve(completeFilePath).toFile();
+        if (!fileToCheck.isFile()) {
+            exportReport.addItem(ReportItemType.MISSING_MANDATORY_FILE, "Missing " + completeFilePath + " file.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkStub(Path sourceFolderPath, ExportReport exportReport, String filePath) throws IOException {
+        String completeFilePath = "config/" + filePath + "stub.txt";
+        File stubFile = sourceFolderPath.resolve(completeFilePath).toFile();
+        if (!stubFile.isFile()) {
+            exportReport.addItem(
+                ReportItemType.WARNING, completeFilePath +
+                    ": Missing stub.txt file. To create one, follow the instructions on "
+                    + "<a href=\"https://github.com/CodinGame/codingame-game-engine/blob/master/stubGeneratorSyntax.md\">"
+                    + "https://github.com/CodinGame/codingame-game-engine/blob/master/stubGeneratorSyntax.md</a>"
+            );
+
+            return false;
+        } else {
+            FileInputStream stubInput = new FileInputStream(stubFile);
+            String stubContent = "";
+            int content;
+            while ((content = stubInput.read()) != -1) {
+                stubContent += ((char) content);
+            }
+            exportReport.getStubs().put(completeFilePath, stubContent);
+            stubInput.close();
+
+            return true;
+        }
+    }
+
+    private boolean checkConfigIni(Path sourceFolderPath, ExportReport exportReport, String filePath) throws IOException {
+        String completeFilePath = "config/" + filePath + "config.ini";
+
+        boolean mandatoryFileIsPresent = existsMandatoryFile(sourceFolderPath, exportReport, filePath, "config.ini");
+        if (!mandatoryFileIsPresent)
+            return false;
+
+        File configFile = sourceFolderPath.resolve(completeFilePath).toFile();
         FileInputStream configInput = new FileInputStream(configFile);
         Properties config = new Properties();
         config.load(configInput);
         if (!config.containsKey("title")) {
-            throw new RuntimeException("Missing title property in config.ini.");
+            exportReport.addItem(
+                ReportItemType.ERROR, completeFilePath +
+                    ": Missing title property in config.ini."
+            );
+
+            return false;
         }
-        if (!config.containsKey("min_players")) {
-            throw new RuntimeException("Missing min_players property in config.ini.");
+
+        List<Integer> numberPlayerBounds = new ArrayList<>();
+        for (String s : new String[] { "min", "max" }) {
+            if (!config.containsKey(s + "_players")) {
+                exportReport.addItem(
+                    ReportItemType.ERROR, completeFilePath +
+                        ": Missing " + s + "_players property in config.ini."
+                );
+
+                return false;
+            }
+            String playerStr = config.getProperty(s + "_players");
+            try {
+                numberPlayerBounds.add(Integer.parseInt(playerStr));
+            } catch (Exception e) {
+                exportReport.addItem(
+                    ReportItemType.ERROR, completeFilePath +
+                        ": " + s + "_players property is not an integer."
+                );
+
+                return false;
+            }
         }
-        if (!config.containsKey("max_players")) {
-            throw new RuntimeException("Missing max_players property in config.ini.");
+
+        if (numberPlayerBounds.get(0) <= 0) {
+            exportReport.addItem(
+                ReportItemType.ERROR, completeFilePath +
+                    ": min_players property should be greater than 0."
+            );
+
+            return false;
         }
+        if (numberPlayerBounds.get(0) > numberPlayerBounds.get(1)) {
+            exportReport.addItem(
+                ReportItemType.ERROR, completeFilePath +
+                    ": max_players property should be greater or equal to min_players property."
+            );
+
+            return false;
+        }
+        if (numberPlayerBounds.get(1) > MAX_PLAYERS) {
+            exportReport.addItem(
+                ReportItemType.ERROR, completeFilePath +
+                    ": max_players property should be lower or equal to " + MAX_PLAYERS + "."
+            );
+
+            return false;
+        }
+        configInput.close();
+        return true;
     }
 
     private Path exportSourceCode(Path sourceFolderPath, Path zipPath) throws IOException {
@@ -360,9 +623,13 @@ class Renderer {
 
                                             Path zipPath = tmpdir.resolve("source.zip");
 
-                                            checkConfig(sourceFolderPath);
-                                            byte[] data = Files.readAllBytes(exportSourceCode(sourceFolderPath, zipPath));
-                                            exchange.getResponseSender().send(ByteBuffer.wrap(data));
+                                            ExportReport exportReport = checkConfig(sourceFolderPath);
+                                            if (exportReport.getExportStatus() == ExportStatus.SUCCESS) {
+                                                byte[] data = Files.readAllBytes(exportSourceCode(sourceFolderPath, zipPath));
+                                                exportReport.setData(Base64.getEncoder().encodeToString(data));
+                                            }
+                                            String jsonExportReport = new Gson().toJson(exportReport);
+                                            exchange.getResponseSender().send(jsonExportReport);
 
                                         } else if (exchange.getRelativePath().equals("/init-config")) {
                                             if (!sourceFolderPath.resolve("config").toFile().isDirectory()) {
