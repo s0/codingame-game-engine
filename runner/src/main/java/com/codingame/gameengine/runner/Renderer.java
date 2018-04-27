@@ -396,7 +396,7 @@ class Renderer {
                 }
             }
         }
-        
+
         exportReport.prettify();
 
         return exportReport;
@@ -410,9 +410,7 @@ class Renderer {
             if (hasLeagues) {
                 exportReport.addItem(
                     ReportItemType.WARNING, completeFilePath +
-                        ": Missing welcome_en.html file. To create one, follow the instructions on "
-                        + "<a href=\"#\">"
-                        + "To be stated</a>"
+                        ": Missing welcome_en.html file."
                 );
             }
             return false;
@@ -439,7 +437,7 @@ class Renderer {
 
             //Remaining images in list do not exist 
             for (String imageName : imagesName) {
-                exportReport.addItem(ReportItemType.WARNING, "Missing " + imageName + " file used in " + completeFilePath);
+                exportReport.addItem(ReportItemType.WARNING, completeFilePath + ": File " + imageName + " is used but missing.");
             }
 
             return true;
@@ -486,9 +484,8 @@ class Renderer {
         if (!stubFile.isFile()) {
             exportReport.addItem(
                 ReportItemType.WARNING, completeFilePath +
-                    ": Missing stub.txt file. To create one, follow the instructions on "
-                    + "<a href=\"https://github.com/CodinGame/codingame-game-engine/blob/master/stubGeneratorSyntax.md\">"
-                    + "https://github.com/CodinGame/codingame-game-engine/blob/master/stubGeneratorSyntax.md</a>"
+                    ": Missing stub.txt file.",
+                "https://github.com/CodinGame/codingame-game-engine/blob/master/stubGeneratorSyntax.md"
             );
 
             return false;

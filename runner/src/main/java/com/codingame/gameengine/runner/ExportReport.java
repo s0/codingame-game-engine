@@ -37,14 +37,24 @@ public class ExportReport {
 
     public void addItem(ReportItemType type, String message) {
         reportItems.add(new ReportItem(type, message));
-        if(type == ReportItemType.ERROR || type == ReportItemType.MISSING_MANDATORY_FILE) {
+        if (type == ReportItemType.ERROR || type == ReportItemType.MISSING_MANDATORY_FILE) {
             exportStatus = ExportStatus.FAIL;
         }
     }
-    
+
+    public void addItem(ReportItemType type, String message, String link) {
+        reportItems.add(new ReportItem(type, message, link));
+        if (type == ReportItemType.ERROR || type == ReportItemType.MISSING_MANDATORY_FILE) {
+            exportStatus = ExportStatus.FAIL;
+        }
+    }
+
     public void merge(ExportReport exportReport) {
         for (ReportItem reportItem : exportReport.getReportItems()) {
-            addItem(reportItem.getType(), reportItem.getMessage());;
+            if (reportItem.getLink() == null)
+                addItem(reportItem.getType(), reportItem.getMessage());
+            else
+                addItem(reportItem.getType(), reportItem.getMessage(), reportItem.getLink());
         }
         for (String stub : exportReport.getStubs().keySet()) {
             stubs.put(stub, exportReport.getStubs().get(stub));
@@ -69,7 +79,7 @@ public class ExportReport {
 
     public boolean hasMandatoryFileMissing() {
         for (ReportItem reportItem : reportItems) {
-            if(reportItem.getType() == ReportItemType.MISSING_MANDATORY_FILE) {
+            if (reportItem.getType() == ReportItemType.MISSING_MANDATORY_FILE) {
                 return true;
             }
         }
@@ -78,7 +88,7 @@ public class ExportReport {
 
     public void prettify() {
         for (ReportItem reportItem : reportItems) {
-            if(reportItem.getType() == ReportItemType.MISSING_MANDATORY_FILE) {
+            if (reportItem.getType() == ReportItemType.MISSING_MANDATORY_FILE) {
                 reportItem.setType(ReportItemType.ERROR);
             }
         }
@@ -88,11 +98,17 @@ public class ExportReport {
 class ReportItem {
     private String message;
     private ReportItemType type;
+    private String link;
 
     public ReportItem(ReportItemType type, String message) {
         super();
         this.message = message;
         this.type = type;
+    }
+
+    public ReportItem(ReportItemType type, String message, String link) {
+        this(type, message);
+        this.link = link;
     }
 
     public String getMessage() {
@@ -109,6 +125,14 @@ class ReportItem {
 
     public void setType(ReportItemType type) {
         this.type = type;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 
 }

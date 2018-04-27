@@ -1,7 +1,7 @@
 import * as config from '../config.js';
-import {Drawer} from '../core/Drawer.js';
-import {ErrorLog} from '../core/ErrorLog.js';
-import {demo} from '../demo.js';
+import { Drawer } from '../core/Drawer.js';
+import { ErrorLog } from '../core/ErrorLog.js';
+import { demo } from '../demo.js';
 
 function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, gameManagerFactory, $localStorage) {
   'ngInject';
@@ -11,7 +11,7 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
   let currentFrame = null;
 
   let playerLoadedPromise = new Promise((resolve) => {
-    $scope.playerLoaded = function(playerApi) {
+    $scope.playerLoaded = function (playerApi) {
       ctrl.playerApi = playerApi;
       resolve(playerApi);
     };
@@ -22,11 +22,14 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
   }).gameParams;
   $scope.loadGame = loadGame;
   $scope.selectReplay = selectReplay;
+  $scope.exportZip = exportZip;
+  $scope.reportItems = {};
+  $scope.closeReportPopup = closeReportPopup;
 
   $interval(checkSize, 1000);
 
   $scope.errors = "";
-  ErrorLog.listen(function(error) {
+  ErrorLog.listen(function (error) {
     $scope.errors += error.message + '\n';
   });
 
@@ -52,7 +55,7 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
     }
     $scope.gameLoaded = true;
     ctrl.gameInfo = convertFrameFormat(ctrl.data);
-    $scope.agents = {...ctrl.data.agents};
+    $scope.agents = { ...ctrl.data.agents };
 
     ctrl.gameManager = gameManagerFactory.createGameManagerFromGameInfo($scope.drawer, ctrl.gameInfo, true);
     ctrl.gameManager.subscribe(onUpdate);
@@ -103,13 +106,13 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
   function convertNameTokens(value) {
     return value && value.replace(/\$(\d)/g, 'Player $1');
   }
-  
+
   function convertFrameFormat(data) {
     const frames = data.views.map(v => {
       let f = v.split('\n');
       let header = f[0].split(' ');
 
-      return {view: v.replace(/^(KEY_FRAME)|(INTERMEDIATE_FRAME)/, ''), keyframe: header[0] === 'KEY_FRAME'};
+      return { view: v.replace(/^(KEY_FRAME)|(INTERMEDIATE_FRAME)/, ''), keyframe: header[0] === 'KEY_FRAME' };
     });
     for (let i = 0; i < frames.length; i++) {
       frames[i].gameSummary = data.summaries[i];
@@ -119,9 +122,9 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
       }
       frames[i].agentId = -1;
     }
-    const agents = data.agents.map(a => Object.assign(a, {avatarUrl: a.avatar}));
+    const agents = data.agents.map(a => Object.assign(a, { avatarUrl: a.avatar }));
     const tooltips = data.tooltips.map(JSON.stringify);
-    return {agents: agents, frames: frames, tooltips: tooltips};
+    return { agents: agents, frames: frames, tooltips: tooltips };
   }
 
   function checkSize() {
@@ -140,7 +143,7 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
   function fetchGame() {
     return new Promise((resolve, reject) => {
       let xhr = new XMLHttpRequest();
-      xhr.onload = function() {
+      xhr.onload = function () {
         let result = null;
         try {
           const json = JSON.parse(this.responseText);
@@ -156,11 +159,59 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
       xhr.send();
     });
   }
+
   $scope.selectProgress = 'inactive';
   async function selectReplay() {
     $scope.selectProgress = 'saving';
     const response = await fetch('/services/save-replay');
     $scope.selectProgress = 'complete';
+  }
+
+  function closeReportPopup() {
+    $scope.showExport = false;
+  }
+
+  $scope.showExport = false;
+  async function exportZip() {
+    const body = document.getElementById('messages');
+
+    const data = await fetch('/services/export');
+    const jsonStr = await data.text();
+    var jsonObj = JSON.parse(jsonStr);
+
+    var parser = new Parser();
+    for (var stub in jsonObj.stubs) {
+      try {
+        parser.parse(jsonObj.stubs[stub], 0);
+      } catch (e) {
+        jsonObj.reportItems.push({ "type": "WARNING", "message": stub, "details": { "name": e.name, "params": e.params } });
+      }
+    }
+
+    if (jsonObj.exportStatus === "SUCCESS") {
+      jsonObj.reportItems.push({ "type": "SUCCESS", "message": "Export success." });
+      var url = window.URL.createObjectURL(new Blob(
+        _base64ToArrayBuffer(jsonObj.data)));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = "export.zip";
+      a.click();
+    } else {
+      jsonObj.reportItems.push({ "type": "FAIL", "message": "Export fail." });
+    }
+    $scope.reportItems = jsonObj.reportItems;
+    $scope.showExport = true;
+  }
+
+
+  function _base64ToArrayBuffer(base64) {
+    var binary_string = window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+    }
+    return [bytes];
   }
 }
 
