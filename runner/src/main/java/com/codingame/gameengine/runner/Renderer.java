@@ -306,29 +306,32 @@ class Renderer {
             return exportReport;
         }
 
-        //Check leagues
-        boolean consecutiveLeague = true;
-        int nbLeagues = 0;
-        for (int i = 1; i < MAX_LEAGUES; i++) {
-            if (!sourceFolderPath.resolve("config/level" + i).toFile().isDirectory()) {
-                consecutiveLeague = false;
-            } else {
-                nbLeagues++;
-                if (!consecutiveLeague) {
-                    exportReport.addItem(ReportItemType.ERROR, "Folder level" + i + " must be consecutive with previous leagues");
-                    return exportReport;
+        //returns an array of leagues
+        int[] levels = Files.list(sourceFolderPath.resolve("config/")).mapToInt(p -> {
+            if (p.toFile().isDirectory()) {
+                String folderName = FilenameUtils.getName(p.toString());
+                Matcher levelMatcher = Pattern.compile("level([0-9]+)").matcher(folderName);
+                if (levelMatcher.matches()) {
+                    int level = Integer.parseInt(levelMatcher.group(1));
+                    if (level < 1 || level > MAX_LEAGUES) {
+                        exportReport.addItem(ReportItemType.ERROR, "level directories must be between level1 and level" + MAX_LEAGUES + ".");
+                        return -1;
+                    }
+                    return level;
                 }
             }
+            return -1;
+        }).filter(i -> i > 0).sorted().toArray();
+        
+        for (int i = 1; i < levels.length; i++) {
+            if (levels[i] != levels[i - 1] + 1) {
+              exportReport.addItem(ReportItemType.ERROR, "Folder level" + levels[i] + " must be consecutive with previous leagues");
+              return exportReport;
+          }
         }
-        if (sourceFolderPath.resolve("config/level" + (MAX_LEAGUES + 1)).toFile().isDirectory()) {
-            exportReport.addItem(ReportItemType.ERROR, "Too many leagues (>" + MAX_LEAGUES + ")");
-            return exportReport;
-        }
-
-        boolean hasLeagues = nbLeagues != 0;
 
         //If there is no league, only check files in config/
-        if (!hasLeagues) {
+        if (levels.length == 0) {
             //Check config.ini
             checkConfigIni(sourceFolderPath, exportReport, "");
 
@@ -345,18 +348,16 @@ class Renderer {
             checkLeaguePopups(sourceFolderPath, exportReport, "", false);
             return exportReport;
         } else {
-            for (int i = 1; i <= nbLeagues; i++) {
+            for (int i = 1; i <= levels.length; i++) {
                 String filePath = "level" + i + "/";
 
                 //Check config.ini
                 ExportReport tmpReport = new ExportReport();
-                if (!checkConfigIni(sourceFolderPath, tmpReport, filePath)) {
-                    if (tmpReport.hasMandatoryFileMissing()) {
-                        exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit config.ini file from config directory");
-                        checkConfigIni(sourceFolderPath, exportReport, "");
-                    } else {
-                        exportReport.merge(tmpReport);
-                    }
+                if (!checkConfigIni(sourceFolderPath, tmpReport, filePath) && tmpReport.hasMandatoryFileMissing()) {
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit config.ini file from config directory");
+                    checkConfigIni(sourceFolderPath, exportReport, "");
+                } else {
+                    exportReport.merge(tmpReport);
                 }
 
                 //Check stub
@@ -506,26 +507,37 @@ class Renderer {
     private boolean checkConfigIni(Path sourceFolderPath, ExportReport exportReport, String filePath) throws IOException {
         String completeFilePath = "config/" + filePath + "config.ini";
 
-        boolean mandatoryFileIsPresent = existsMandatoryFile(sourceFolderPath, exportReport, filePath, "config.ini");
-        if (!mandatoryFileIsPresent)
+        if (!existsMandatoryFile(sourceFolderPath, exportReport, filePath, "config.ini")) {
+            if (filePath.isEmpty())
+                throw new RuntimeException("Missing " + completeFilePath + " file");
             return false;
+        }
 
         File configFile = sourceFolderPath.resolve(completeFilePath).toFile();
         FileInputStream configInput = new FileInputStream(configFile);
         Properties config = new Properties();
         config.load(configInput);
         if (!config.containsKey("title")) {
+            if (filePath.isEmpty())
+                throw new RuntimeException(
+                    completeFilePath +
+                        ": Missing title property in config.ini."
+                );
             exportReport.addItem(
                 ReportItemType.ERROR, completeFilePath +
                     ": Missing title property in config.ini."
             );
-
             return false;
         }
 
         List<Integer> numberPlayerBounds = new ArrayList<>();
         for (String s : new String[] { "min", "max" }) {
             if (!config.containsKey(s + "_players")) {
+                if (filePath.isEmpty())
+                    throw new RuntimeException(
+                        completeFilePath +
+                            ": Missing " + s + "_players property in config.ini."
+                    );
                 exportReport.addItem(
                     ReportItemType.ERROR, completeFilePath +
                         ": Missing " + s + "_players property in config.ini."
@@ -537,6 +549,11 @@ class Renderer {
             try {
                 numberPlayerBounds.add(Integer.parseInt(playerStr));
             } catch (Exception e) {
+                if (filePath.isEmpty())
+                    throw new RuntimeException(
+                        completeFilePath +
+                            ": " + s + "_players property is not an integer."
+                    );
                 exportReport.addItem(
                     ReportItemType.ERROR, completeFilePath +
                         ": " + s + "_players property is not an integer."
@@ -547,6 +564,11 @@ class Renderer {
         }
 
         if (numberPlayerBounds.get(0) <= 0) {
+            if (filePath.isEmpty())
+                throw new RuntimeException(
+                    completeFilePath +
+                        ": min_players property should be greater than 0."
+                );
             exportReport.addItem(
                 ReportItemType.ERROR, completeFilePath +
                     ": min_players property should be greater than 0."
@@ -555,6 +577,11 @@ class Renderer {
             return false;
         }
         if (numberPlayerBounds.get(0) > numberPlayerBounds.get(1)) {
+            if (filePath.isEmpty())
+                throw new RuntimeException(
+                    completeFilePath +
+                        ": max_players property should be greater or equal to min_players property."
+                );
             exportReport.addItem(
                 ReportItemType.ERROR, completeFilePath +
                     ": max_players property should be greater or equal to min_players property."
@@ -563,6 +590,11 @@ class Renderer {
             return false;
         }
         if (numberPlayerBounds.get(1) > MAX_PLAYERS) {
+            if (filePath.isEmpty())
+                throw new RuntimeException(
+                    completeFilePath +
+                        ": max_players property should be lower or equal to " + MAX_PLAYERS + "."
+                );
             exportReport.addItem(
                 ReportItemType.ERROR, completeFilePath +
                     ": max_players property should be lower or equal to " + MAX_PLAYERS + "."
@@ -647,7 +679,7 @@ class Renderer {
 
                                             config.store(configOutput, null);
                                             exchange.setStatusCode(StatusCodes.FOUND);
-                                            exchange.getResponseHeaders().put(Headers.LOCATION, "/export.html");
+                                            exchange.getResponseHeaders().put(Headers.LOCATION, "/");
                                             exchange.endExchange();
                                         } else if (exchange.getRelativePath().equals("/save-replay")) {
                                             Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir")).resolve("codingame");

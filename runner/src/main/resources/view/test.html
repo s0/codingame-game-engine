@@ -168,6 +168,15 @@
 			overflow: hidden;
 		}
 
+		.form-popup {
+			background-color: #20252a;
+			border: 1px solid #41454a;
+			padding: 20px;
+			max-width: 400px;
+			position: relative;
+			overflow: hidden;
+		}
+
 		.report-details-wrapper {
 			list-style-type: none;
 			padding-left: 60px;
@@ -199,6 +208,15 @@
 		.report-item.SUCCESS {
 			color: #2ECC71;
 		}
+
+		#form {
+			justify-content: center;
+			align-items: center;
+		}
+
+		#form>p>input {
+			margin-bottom: 10px;
+		}
 	</style>
 </head>
 
@@ -222,6 +240,35 @@
 				<div class="default-button-wrapper">
 					<button class="default-button" ng-click="closeReportPopup()">Close</button>
 				</div>
+			</div>
+		</div>
+
+		<div ng-show="showConfigForm" class="report-popup-wrapper">
+			<div class="form-popup">
+				<form id="form" action="/services/init-config" method="get">
+					<p>{{formStatement}}</p>
+					<p>
+						<label for="title">Title*</label>
+					</p>
+					<p>
+						<input required="required" type="text" name="title" id="title" />
+					</p>
+					<p>
+						<label for="min_players">Min players*</label>
+					</p>
+					<p>
+						<input required="required" type="number" min="1" max="8" name="min_players" id="min_players" />
+					</p>
+					<p>
+						<label for="max_players">Max players*</label>
+					</p>
+					<p>
+						<input required="required" type="number" min="1" max="8" name="max_players" id="max_players" />
+					</p>
+					<div class="default-button-wrapper">
+						<button class="default-button" id="formbutton" type="submit" ng-click="submitConfig()">Submit config</button>
+					</div>
+				</form>
 			</div>
 		</div>
 

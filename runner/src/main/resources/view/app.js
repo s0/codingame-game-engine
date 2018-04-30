@@ -25,6 +25,7 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
   $scope.exportZip = exportZip;
   $scope.reportItems = {};
   $scope.closeReportPopup = closeReportPopup;
+  $scope.submitConfig = submitConfig;
 
   $interval(checkSize, 1000);
 
@@ -172,37 +173,41 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
   }
 
   $scope.showExport = false;
+  $scope.showConfigForm = false;
   async function exportZip() {
-    const body = document.getElementById('messages');
-
     const data = await fetch('/services/export');
-    const jsonStr = await data.text();
-    var jsonObj = JSON.parse(jsonStr);
-
-    var parser = new Parser();
-    for (var stub in jsonObj.stubs) {
-      try {
-        parser.parse(jsonObj.stubs[stub], 0);
-      } catch (e) {
-        jsonObj.reportItems.push({ "type": "WARNING", "message": stub, "details": { "name": e.name, "params": e.params } });
-      }
-    }
-
-    if (jsonObj.exportStatus === "SUCCESS") {
-      jsonObj.reportItems.push({ "type": "SUCCESS", "message": "Export success." });
-      var url = window.URL.createObjectURL(new Blob(
-        _base64ToArrayBuffer(jsonObj.data)));
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = "export.zip";
-      a.click();
+    if (data.status >= 400 && data.status < 500) {
+      const text = await data.text();
+      $scope.formStatement = text;
+      $scope.showConfigForm = true;
     } else {
-      jsonObj.reportItems.push({ "type": "FAIL", "message": "Export fail." });
-    }
-    $scope.reportItems = jsonObj.reportItems;
-    $scope.showExport = true;
-  }
+      const jsonStr = await data.text();
+      var jsonObj = JSON.parse(jsonStr);
 
+      var parser = new Parser();
+      for (var stub in jsonObj.stubs) {
+        try {
+          parser.parse(jsonObj.stubs[stub], 0);
+        } catch (e) {
+          jsonObj.reportItems.push({ "type": "WARNING", "message": stub, "details": { "name": e.name, "params": e.params } });
+        }
+      }
+
+      if (jsonObj.exportStatus === "SUCCESS") {
+        jsonObj.reportItems.push({ "type": "SUCCESS", "message": "Export success." });
+        var url = window.URL.createObjectURL(new Blob(
+          _base64ToArrayBuffer(jsonObj.data)));
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = "export.zip";
+        a.click();
+      } else {
+        jsonObj.reportItems.push({ "type": "FAIL", "message": "Export fail." });
+      }
+      $scope.reportItems = jsonObj.reportItems;
+      $scope.showExport = true;
+    }
+  }
 
   function _base64ToArrayBuffer(base64) {
     var binary_string = window.atob(base64);
@@ -213,6 +218,22 @@ function PlayerCtrl($scope, $timeout, $interval, $translate, drawerFactory, game
     }
     return [bytes];
   }
+
+  async function submitConfig(){
+    const data = await fetch('/services/init-config');
+    $scope.showConfigForm = false;
+    exportZip();
+  }
+
+  $('#form').submit(function(e){
+    e.preventDefault();
+    $.ajax({
+        url:'/services/init-config',
+        type:'get',
+        data:$('#form').serialize(),
+        success:function(){}
+    });
+});
 }
 
 angular.module('player').controller('PlayerCtrl', PlayerCtrl);
