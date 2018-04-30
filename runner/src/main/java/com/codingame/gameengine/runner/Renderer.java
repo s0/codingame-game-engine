@@ -354,7 +354,7 @@ class Renderer {
                 //Check config.ini
                 ExportReport tmpReport = new ExportReport();
                 if (!checkConfigIni(sourceFolderPath, tmpReport, filePath) && tmpReport.hasMandatoryFileMissing()) {
-                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit config.ini file from config directory");
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit config.ini file from config directory.");
                     checkConfigIni(sourceFolderPath, exportReport, "");
                 } else {
                     exportReport.merge(tmpReport);
@@ -390,7 +390,7 @@ class Renderer {
                 //Check league popups
                 tmpReport = new ExportReport();
                 if (!checkLeaguePopups(sourceFolderPath, tmpReport, filePath, true)) {
-                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit Boss.* file from config directory.");
+                    exportReport.addItem(ReportItemType.INFO, "config/" + filePath + ": Inherit welcome_en.html file from config directory.");
                     checkLeaguePopups(sourceFolderPath, exportReport, "", true);
                 } else {
                     exportReport.merge(tmpReport);
@@ -652,7 +652,11 @@ class Renderer {
 
                                             Path zipPath = tmpdir.resolve("source.zip");
 
+                                            ExportReport statementSplitterReport = StatementSplitter.generateSplittedStatement(sourceFolderPath);
+                                            
                                             ExportReport exportReport = checkConfig(sourceFolderPath);
+                                            exportReport.merge(statementSplitterReport);
+                                            
                                             if (exportReport.getExportStatus() == ExportStatus.SUCCESS) {
                                                 byte[] data = Files.readAllBytes(exportSourceCode(sourceFolderPath, zipPath));
                                                 exportReport.setData(Base64.getEncoder().encodeToString(data));
