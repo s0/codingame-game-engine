@@ -9,6 +9,8 @@ import org.codejargon.feather.Feather;
 
 public class RefereeMain {
     
+    private static Feather feather;
+    
     private static boolean inProduction = false;
     
     public static boolean isInProduction() {
@@ -36,12 +38,14 @@ public class RefereeMain {
 
     @SuppressWarnings("unchecked")
     public static void start(InputStream is, PrintStream out) {
+        feather = Feather.with(new GameEngineModule());
         
-        Injector injector = Guice.createInjector(new GameEngineModule());
-
-        Type type = Types.newParameterizedType(GameManager.class, AbstractPlayer.class);
-        GameManager<AbstractPlayer> gameManager = (GameManager<AbstractPlayer>) injector.getInstance(Key.get(type));       
+        GameManager<AbstractPlayer> gameManager = feather.instance(GameManager.class);
         
         gameManager.start(is, out);
+    }
+    
+    public static Feather feather() {
+        return feather;
     }
 }

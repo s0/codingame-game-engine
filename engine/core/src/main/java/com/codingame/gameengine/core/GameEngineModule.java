@@ -1,15 +1,11 @@
 package com.codingame.gameengine.core;
 
-import java.lang.reflect.Type;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.util.Types;
+import org.codejargon.feather.Provides;
 
-class GameEngineModule extends AbstractModule {
+import com.google.gson.Gson;
 
     @Override
     protected void configure() {
