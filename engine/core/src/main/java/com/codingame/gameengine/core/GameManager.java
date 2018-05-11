@@ -31,9 +31,9 @@ import com.google.gson.JsonObject;
  */
 @Singleton
 public final class GameManager<T extends AbstractPlayer> {
-    @Inject private Provider<T> playerProvider;
-    @Inject private Provider<AbstractReferee> refereeProvider;
-    @Inject private Gson gson;
+    private Provider<T> playerProvider;
+    private Provider<AbstractReferee> refereeProvider;
+    private Gson gson;
     protected static Log log = LogFactory.getLog(GameManager.class);
 
     private static final int VIEW_DATA_SOFT_QUOTA = 512 * 1024;
@@ -69,6 +69,14 @@ public final class GameManager<T extends AbstractPlayer> {
     private boolean initDone = false;
     private boolean outputsRead = false;
     private int totalViewDataBytesSent = 0;
+    
+    @Inject
+    public GameManager(Provider<T> playerProvider, Provider<AbstractReferee> refereeProvider, Gson gson) {
+        super();
+        this.playerProvider = playerProvider;
+        this.refereeProvider = refereeProvider;
+        this.gson = gson;
+    }
 
     /**
      * GameManager main loop.

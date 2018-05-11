@@ -42,11 +42,11 @@ public class GraphicEntityModule implements Module {
     private WorldState currentWorldState;
 
     private GameManager<AbstractPlayer> gameManager;
-    @Inject private Serializer serializer;
-    @Inject private Provider<SpriteSheetLoader> spriteSheetProvider;
+    private Serializer serializer;
+    private Provider<SpriteSheetLoader> spriteSheetProvider;
 
     @Inject
-    GraphicEntityModule(GameManager<AbstractPlayer> gameManager) {
+    GraphicEntityModule(GameManager<AbstractPlayer> gameManager, Serializer serializer, Provider<SpriteSheetLoader> spriteSheetProvider) {
         this.gameManager = gameManager;
         world = new World();
         entities = new ArrayList<>();
@@ -55,6 +55,8 @@ public class GraphicEntityModule implements Module {
         lockWorld = false;
         worldStates = new HashMap<>();
         currentWorldState = new WorldState("0");
+        this.serializer = serializer;
+        this.spriteSheetProvider = spriteSheetProvider;
 
         gameManager.registerModule(this);
     }
