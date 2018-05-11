@@ -22,6 +22,10 @@ public abstract class AbstractPlayer {
     public static class TimeoutException extends Exception {
         private static final long serialVersionUID = 42L;
     }
+    
+    public AbstractPlayer() {
+        RefereeMain.feather().injectFields(this);
+    }
 
     private int index;
     private List<String> inputs = new ArrayList<>();

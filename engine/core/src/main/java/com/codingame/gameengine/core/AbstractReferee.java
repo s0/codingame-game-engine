@@ -7,6 +7,10 @@ import java.util.Properties;
  *
  */
 public abstract class AbstractReferee {
+    
+    public AbstractReferee() {
+        RefereeMain.feather().injectFields(this);
+    }
 
     /**
      * <p>
