@@ -10,7 +10,7 @@ import javax.inject.Inject;
  *
  */
 public abstract class AbstractPlayer {
-    @Inject Provider<GameManager<AbstractPlayer>> gameManagerProvider;
+    @Inject GameManager<AbstractPlayer> gameManager;
 
     /**
      * An Exception thrown by <code>getOutputs()</code> when the player's AI did not respond in time after an <code>execute()</code>.
@@ -115,7 +115,7 @@ public abstract class AbstractPlayer {
     public final void deactivate(String reason) {
         this.active = false;
         if (reason != null) {
-            gameManagerProvider.get().addTooltip(new Tooltip(index, reason));
+            gameManager.addTooltip(new Tooltip(index, reason));
         }
     }
 
@@ -129,7 +129,7 @@ public abstract class AbstractPlayer {
         if (hasBeenExecuted) {
             throw new RuntimeException("Impossible to send new inputs after calling execute");
         }
-        if (this.gameManagerProvider.get().getOuputsRead()) {
+        if (this.gameManager.getOuputsRead()) {
             throw new RuntimeException("Sending input data to a player after reading any output is forbidden.");
         }
         this.inputs.add(line);
@@ -139,7 +139,7 @@ public abstract class AbstractPlayer {
      * Executes the player for a maximum of turnMaxTime milliseconds and store the output.
      */
     public final void execute() {
-        gameManagerProvider.get().execute(this);
+        gameManager.execute(this);
         this.hasBeenExecuted = true;
         this.hasNeverBeenExecuted = false;
     }
@@ -151,7 +151,7 @@ public abstract class AbstractPlayer {
      * @throws TimeoutException
      */
     public final List<String> getOutputs() throws TimeoutException {
-        this.gameManagerProvider.get().setOuputsRead(true);
+        this.gameManager.setOuputsRead(true);
         if (!this.hasBeenExecuted) {
             throw new RuntimeException("Can't get outputs without executing it!");
         }
