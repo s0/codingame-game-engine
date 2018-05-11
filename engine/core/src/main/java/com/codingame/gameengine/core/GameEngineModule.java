@@ -7,9 +7,7 @@ import org.codejargon.feather.Provides;
 
 import com.google.gson.Gson;
 
-    @Override
-    protected void configure() {
-    }
+class GameEngineModule {
 
     @SuppressWarnings("unchecked")
     private Class<? extends AbstractPlayer> getPlayerClass() throws ClassNotFoundException {
@@ -23,27 +21,18 @@ import com.google.gson.Gson;
 
     @Provides
     @Singleton
-    AbstractReferee provideAbstractReferee(Injector injector) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        AbstractReferee referee = getRefereeClass().newInstance();
-        injector.injectMembers(referee);
-        return referee;
+    AbstractReferee provideAbstractReferee() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        return getRefereeClass().newInstance();
     }
 
     @Provides
-    AbstractPlayer providePlayer(Injector injector) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        AbstractPlayer abstractPlayer = getPlayerClass().newInstance();
-        injector.injectMembers(abstractPlayer);
-
-        return abstractPlayer;
+    AbstractPlayer providePlayer() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        return getPlayerClass().newInstance();
     }
 
-    @SuppressWarnings("unchecked")
     @Provides
     @Singleton
-    GameManager<AbstractPlayer> provideGameManager(Injector injector) throws ClassNotFoundException {
-        Type type = Types.newParameterizedType(GameManager.class, getPlayerClass());
-        GameManager<AbstractPlayer> gameManager = (GameManager<AbstractPlayer>) injector.getInstance(Key.get(type));
-
-        return gameManager;
+    GameManager<AbstractPlayer> provideGameManager(Provider<AbstractPlayer> playerProvider, Provider<AbstractReferee> refereeProvider, Gson gson) throws ClassNotFoundException {
+        return new GameManager<>(playerProvider, refereeProvider, gson);
     }
 }
