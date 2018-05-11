@@ -3,8 +3,7 @@ package com.codingame.gameengine.core;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
+import javax.inject.Inject;
 
 /**
  * The representation of the a player's AI during the game's execution.

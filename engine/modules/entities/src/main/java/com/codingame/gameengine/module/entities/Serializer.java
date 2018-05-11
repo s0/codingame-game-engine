@@ -7,8 +7,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.inject.Singleton;
+
 import com.codingame.gameengine.module.entities.Entity.Type;
-import com.google.inject.Singleton;
 
 @Singleton
 class Serializer {

@@ -2,7 +2,7 @@ package com.codingame.gameengine.module.entities;
 
 import java.util.stream.IntStream;
 
-import com.google.inject.Inject;
+import javax.inject.Inject;
 
 public class SpriteSheetLoader {
     private String name;
