@@ -16,9 +16,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -34,7 +31,7 @@ public final class GameManager<T extends AbstractPlayer> {
     private Provider<T> playerProvider;
     private Provider<AbstractReferee> refereeProvider;
     private Gson gson;
-    protected static Log log = LogFactory.getLog(GameManager.class);
+    protected static Log log = Log.getInstance();
 
     private static final int VIEW_DATA_SOFT_QUOTA = 512 * 1024;
     private static final int VIEW_DATA_HARD_QUOTA = 1024 * 1024;

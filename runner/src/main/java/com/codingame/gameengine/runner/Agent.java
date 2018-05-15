@@ -6,8 +6,8 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.codingame.gameengine.core.Log;
+
 
 abstract class Agent {
 
@@ -15,7 +15,7 @@ abstract class Agent {
     public static final int AGENT_MAX_BUFFER_SIZE = 10_000;
     public static final int THRESHOLD_LIMIT_STDERR_SIZE = 4096 * 50;
 
-    private static Log log = LogFactory.getLog(Agent.class);
+    private static Log log = Log.getInstance();
 
     private OutputStream processStdin;
     private InputStream processStdout;
@@ -81,8 +81,8 @@ abstract class Agent {
     public void sendInput(String input) {
         if (processStdin != null) {
             try {
-                if (log.isTraceEnabled()) {
-                    log.trace("Send input to agent " + this.agentId + " : " + input);
+                if (log.isInfoEnabled()) {
+                    log.info("Send input to agent " + this.agentId + " : " + input);
                 }
                 processStdin.write(input.getBytes(UTF8));
                 processStdin.flush();

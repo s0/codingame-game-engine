@@ -11,9 +11,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
+import com.codingame.gameengine.core.Log;
 import com.codingame.gameengine.runner.Command.InputCommand;
 import com.codingame.gameengine.runner.Command.OutputCommand;
 import com.codingame.gameengine.runner.dto.AgentDto;
@@ -30,7 +28,7 @@ public class GameRunner {
     private static final Pattern COMMAND_HEADER_PATTERN = Pattern
             .compile("\\[\\[(?<cmd>.+)\\] ?(?<lineCount>[0-9]+)\\]");
 
-    protected static Log log = LogFactory.getLog(GameRunner.class);
+    protected static Log log = Log.getInstance();
     GameResult gameResult = new GameResult();
 
     private Agent referee;
