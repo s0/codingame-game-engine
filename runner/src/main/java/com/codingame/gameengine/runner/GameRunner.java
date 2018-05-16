@@ -30,6 +30,9 @@ public class GameRunner {
     private static final Pattern COMMAND_HEADER_PATTERN = Pattern
             .compile("\\[\\[(?<cmd>.+)\\] ?(?<lineCount>[0-9]+)\\]");
 
+    static {
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
+    }
     protected static Log log = LogFactory.getLog(GameRunner.class);
     GameResult gameResult = new GameResult();
 
