@@ -31,6 +31,16 @@ abstract public class AbstractPlayer {
     private int score;
     private boolean hasBeenExecuted;
     private boolean hasNeverBeenExecuted = true;
+    private boolean skip = false;
+
+    /**
+     * The agent skips the current turn.
+     */
+    public final void skipTurn() {
+        skip = true;
+        execute();
+        skip = false;
+    }
 
     /**
      * Returns a string that will be converted into the real nickname by the viewer.
@@ -134,6 +144,10 @@ abstract public class AbstractPlayer {
     //
     // The following methods are only used by the GameManager:
     //
+    
+    final int getExpectedOutputLinesInternal() {
+        return skip ? 0 : getExpectedOutputLines();
+    }
 
     final void setIndex(int index) {
         this.index = index;
