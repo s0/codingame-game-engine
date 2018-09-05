@@ -5,7 +5,7 @@ import {WIDTH, HEIGHT, BASE_FRAME_DURATION} from './constants.js'
 import {ErrorLog} from './ErrorLog.js'
 import {demo as defaultDemo} from '../demo.js'
 import {setRenderer, destroyFlagged, flagForDestructionOnReinit} from './rendering.js'
-
+import {ModuleError} from './ModuleError.js'
 /* global PIXI requestAnimationFrame $ */
 
 export class Drawer {
@@ -70,8 +70,8 @@ export class Drawer {
     return config.defaultOverSampling || 2
   }
   handleModuleError (name, error) {
-    console.log('I\'m sorry sir, you may have made an error in one of your modules, called : ', name)
-    console.log(name, error)
+    ErrorLog.push(new ModuleError(name, error))
+    console.error(error)
   }
 
   instantiateModules () {
@@ -500,8 +500,12 @@ export class Drawer {
       if (typeof module.animateScene === 'function') {
         try {
           module.animateScene(step)
-        } catch (error) {
-          this.handleModuleError(moduleName, error)
+        } catch (e) {
+          this.handleModuleError(moduleName, e)
+          ErrorLog.push({
+            message: '< module ' + moduleName + ' disabled >'
+          })
+          module.animateScene = null
         }
       }
     }
