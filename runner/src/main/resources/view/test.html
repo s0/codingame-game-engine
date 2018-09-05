@@ -14,6 +14,11 @@
 <body>
 	<div ng-app="player" class="player" ng-controller="PlayerCtrl" ng-cloak>
 
+    <div ng-show="false" class="module-load-error-overlay">
+      <div>The game's modules failed to load.</div>
+      <div>Check your browser's JavaScript console for details.</div>
+    </div>
+
 		<div ng-show="showExportPopup" class="report-popup-wrapper">
 			<div class="report-popup">
 				<div class="report-items-wrapper">

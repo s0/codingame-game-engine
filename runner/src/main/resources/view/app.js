@@ -4,7 +4,7 @@ import {ErrorLog} from '../core/ErrorLog.js'
 import {demo as defaultDemo} from '../demo.js'
 import Parser from './lib/Parser.js'
 
-/* global fetch, angular, Blob, $, XMLHttpRequest */
+/* global fetch, angular, $, XMLHttpRequest */
 
 function PlayerCtrl ($scope, $timeout, $interval, $filter, drawerFactory, gameManagerFactory, $localStorage) {
   'ngInject'
