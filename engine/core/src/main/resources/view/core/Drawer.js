@@ -69,11 +69,19 @@ export class Drawer {
   getDefaultOverSampling () {
     return config.defaultOverSampling || 2
   }
+  handleModuleError (name, error) {
+    console.log('I\'m sorry sir, you may have made an error in one of your modules, called : ', name)
+    console.log(name, error)
+  }
 
   instantiateModules () {
     this.modules = {}
     for (const Module of config.modules) {
-      this.modules[Module.name] = new Module(assets)
+      try {
+        this.modules[Module.name] = new Module(assets)
+      } catch (error) {
+        this.handleModuleError(Module.name, error)
+      }
     }
   }
 
@@ -424,7 +432,11 @@ export class Drawer {
     for (let moduleName in this.modules) {
       const module = this.modules[moduleName]
       if (parsedFrame.data.hasOwnProperty(moduleName)) {
-        module.updateScene(parsedFrame.previous.data[moduleName], parsedFrame.data[moduleName], progress, speed)
+        try {
+          module.updateScene(parsedFrame.previous.data[moduleName], parsedFrame.data[moduleName], progress, speed)
+        } catch (error) {
+          this.handleModuleError(moduleName, error)
+        }
       }
     }
   }
@@ -486,7 +498,11 @@ export class Drawer {
     for (let moduleName in this.modules) {
       const module = this.modules[moduleName]
       if (typeof module.animateScene === 'function') {
-        module.animateScene(step)
+        try {
+          module.animateScene(step)
+        } catch (error) {
+          this.handleModuleError(moduleName, error)
+        }
       }
     }
     return true
