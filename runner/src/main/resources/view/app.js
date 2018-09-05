@@ -114,18 +114,6 @@ function PlayerCtrl ($scope, $timeout, $interval, $filter, drawerFactory, gameMa
     }
   }
 
-  function convertNameTokensAndAddColors (str) {
-    if (!str) {
-      return null
-    }
-    for (let i in ctrl.data.ids) {
-      const regexpr = new RegExp('\\$' + i, 'g')
-      const agentNameInColor = ctrl.data.agents[i].name.fontcolor(ctrl.data.agents[i].color)
-      str.replace(regexpr.source, agentNameInColor)
-    }
-    return str
-  }
-
   function convertFrameFormat (data) {
     const frames = data.views.map(v => {
       let f = v.split('\n')
@@ -330,11 +318,9 @@ angular.module('player')
     return {
       restrict: 'A',
       link: function (scope, el, attrs) {
-        var enabled = true
         var rightBloc = el.parent().find('.right-bloc')
         var leftBloc = el.parent().find('.left-bloc')
         var minLeft = 510
-        var minRight = 0
         var config = $localStorage.$default({
           ideSplitPosition: '50%'
         })
@@ -364,7 +350,7 @@ angular.module('player')
           el.css('left', getLeftCss())
         }
 
-        function mouseMoveHandler () {
+        function mouseMoveHandler (event) {
           position = Math.max(minLeft, event.clientX) + 'px'
           config.ideSplitPosition = position
           updatePosition()
