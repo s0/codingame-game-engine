@@ -60,6 +60,7 @@ class Serializer {
         keys.put("duration", "d");
         keys.put("baseWidth", "bw");
         keys.put("baseHeight", "bh");
+        keys.put("alwaysRender","ar");
 
         commands = new HashMap<>();
         commands.put("CREATE", "C");

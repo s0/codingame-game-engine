@@ -42,6 +42,7 @@ export const PROPERTIES = {
   },
 
   visible: boolOpts,
+  alwaysRender: boolOpts,
 
   rotation: angleOpts,
 
