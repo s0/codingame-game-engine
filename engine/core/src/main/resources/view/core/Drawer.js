@@ -503,7 +503,7 @@ export class Drawer {
         } catch (e) {
           this.handleModuleError(moduleName, e)
           ErrorLog.push({
-            message: '< module ' + moduleName + ' disabled >'
+            message: `< module ${moduleName} disabled >`
           })
           module.animateScene = null
         }
