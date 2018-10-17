@@ -11,7 +11,7 @@ import java.util.function.BiConsumer;
 class EntityState {
     Map<String, Param> map;
     boolean force;
-    
+
     public EntityState(EntityState other, boolean force) {
         map = new HashMap<>(other.map);
         this.force = force;
@@ -63,6 +63,9 @@ class EntityState {
 
     EntityState diffFromNonNullOtherState(EntityState prevState) {
         EntityState diff = new EntityState();
+        if (isForced()) {
+            diff.force();
+        }
         forEach((key, value) -> {
             Param prevValue = prevState.get(key);
             if (!value.equals(prevValue)) {
@@ -76,10 +79,10 @@ class EntityState {
         if (optionalPrevState.isPresent()) {
             return diffFromNonNullOtherState(optionalPrevState.get());
         } else {
-            return new EntityState(this,force);
+            return new EntityState(this, force);
         }
     }
-    
+
     public boolean isForced() {
         return force;
     }

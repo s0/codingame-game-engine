@@ -149,7 +149,6 @@ public class GraphicEntityModule implements Module {
             state = new WorldState(actualT);
             worldStates.put(actualT, state);
         }
-        state.setCommitAll(commitAll);
 
         if (commitAll) {
             state.markAsWorldCommit();
