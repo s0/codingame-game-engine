@@ -139,7 +139,7 @@ public class GraphicEntityModule implements Module {
     public void commitEntityState(double t, Entity<?>... entities) {
         commitState(t, true, entities);
     }
-    
+
     private void commitState(double t, boolean force, Entity<?>... entities) {
         requireValidFrameInstant(t);
         requireNonEmpty(entities);
@@ -154,9 +154,9 @@ public class GraphicEntityModule implements Module {
 
         // finalState is only used for the lambda right after it
         flushAllEntityStates(entities, state, force);
-        
+
     }
-    
+
     private void flushAllEntityStates(Entity<?>[] entities, WorldState state, boolean force) {
         Stream.of(entities).forEach(entity -> state.flushEntityState(entity, force));
     }
@@ -192,7 +192,7 @@ public class GraphicEntityModule implements Module {
             .collect(Collectors.toList());
 
         for (WorldState nextWorldState : orderedStates) {
-            if(nextWorldState.isCommitAll()) {
+            if (nextWorldState.isCommitAll()) {
                 worldCommits += " " + nextWorldState.getFrameTime();
             }
             WorldState worldStateDiff = nextWorldState.diffFromOtherWorldState(currentWorldState);
@@ -205,8 +205,10 @@ public class GraphicEntityModule implements Module {
         }
 
         worldStates.clear();
-        commands.add(worldCommits);
 
+        if (worldCommits.length() > 1) {
+            commands.add(worldCommits);
+        }
         gameManager.setViewData("entitymodule", commands);
     }
 
@@ -291,7 +293,7 @@ public class GraphicEntityModule implements Module {
         return e;
 
     }
-    
+
     /**
      * Creates a new BufferedGroup entity, its graphical counterpart will be created on the frame currently being computed.
      * <p>
