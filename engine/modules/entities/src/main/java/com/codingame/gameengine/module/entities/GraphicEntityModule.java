@@ -161,6 +161,10 @@ public class GraphicEntityModule implements Module {
         Stream.of(entities).forEach(entity -> state.flushEntityState(entity));
     }
 
+    private void flushAllEntityStates(Entity<?>[] entities, WorldState state) {
+        Stream.of(entities).forEach(entity -> state.flushEntityState(entity));
+    }
+
     private void requireNonEmpty(Object[] items) {
         if (items.length == 0) {
             throw new IllegalArgumentException("Must not be an empty array");

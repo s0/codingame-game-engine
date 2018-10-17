@@ -1,4 +1,4 @@
-package com.codingame.gameengine.module.entities;
+
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -227,6 +227,7 @@ class Serializer {
         if (worldUpdates.isEmpty()) {
             return Optional.empty();
         } else {
+            return "";
             return Optional.of(
                 commands.get("WORLDUPDATE") +
                     worldUpdates.stream()
