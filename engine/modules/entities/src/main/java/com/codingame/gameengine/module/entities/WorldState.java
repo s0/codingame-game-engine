@@ -38,8 +38,8 @@ class WorldState {
 
     }
 
-    void setCommitAll(boolean commitAll) {
-        this.commitAll = commitAll;
+    void commitAll() {
+        this.commitAll = true;
     }
 
     boolean isCommitAll() {

@@ -151,9 +151,10 @@ public class GraphicEntityModule implements Module {
             state = new WorldState(actualT);
             worldStates.put(actualT, state);
         }
-        state.setCommitAll(commitAll);
 
-        // finalState is only used for the lambda right after it
+        if (commitAll) {
+            state.commitAll();
+        }
         flushAllEntityStates(entities, state, force);
 
     }
