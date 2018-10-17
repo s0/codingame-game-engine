@@ -8,16 +8,11 @@ import java.util.Optional;
 class WorldState {
     private Map<Entity<?>, EntityState> entityStateMap;
     private final String t;
-    private boolean autocommit, force;
+    private boolean commitAll;
 
     WorldState(String t) {
-        this(t, false);
-    }
-
-    public WorldState(String t, boolean autocommit) {
         this.t = t;
         entityStateMap = new HashMap<>();
-        this.autocommit = autocommit;
     }
 
     String getFrameTime() {
@@ -30,7 +25,7 @@ class WorldState {
 
     /**
      * Performs a flush of all the entity states that are not already present in the state map. This allows the default behaviour of commiting all
-     * entities at t = 1, which can be overriden.
+     * entities at t = 1, which can be overridden.
      */
     void flushMissingEntities(List<Entity<?>> entities) {
         entities.stream().forEach(entity -> {
@@ -43,7 +38,17 @@ class WorldState {
 
     }
 
-    private void updateStateMap(EntityState oldState, EntityState currentState, Entity<?> entity) {
+    void setCommitAll(boolean commitAll) {
+        this.commitAll = commitAll;
+    }
+    boolean isCommitAll() {
+        return commitAll;
+    }
+
+    private void updateStateMap(EntityState oldState, EntityState currentState, Entity<?> entity, boolean force) {
+        if (force) {
+            currentState.force();
+        }
         if (oldState == null) {
             entityStateMap.put(entity, currentState);
         } else {
@@ -51,30 +56,18 @@ class WorldState {
         }
     }
 
-    void flushEntityState(Entity<?> entity) {
+    void flushEntityState(Entity<?> entity, boolean force) {
         final EntityState state = entityStateMap.get(entity);
-        updateStateMap(state, entity.state, entity);
+        updateStateMap(state, entity.state, entity, force);
         entity.state = new EntityState();
     }
 
     void updateAllEntities(WorldState next) {
         next.entityStateMap.forEach((entity, nextState) -> {
             EntityState oldState = entityStateMap.get(entity);
-            updateStateMap(oldState, nextState, entity);
+            updateStateMap(oldState, nextState, entity, false);
         });
     }
-
-    public boolean isAutocommit() {
-        return autocommit;
-    }
-
-    public boolean isForce() {
-        return force;
-    }
-
-    public void setForce(boolean force) {
-        this.force = force;
-    };
 
     public WorldState diffFromOtherWorldState(WorldState previousWorldState) {
         WorldState worldDiff = new WorldState(this.t);
@@ -84,8 +77,8 @@ class WorldState {
                 Optional<EntityState> prevEntityState = Optional.ofNullable(previousWorldState.getEntityStateMap().get(entity));
                 EntityState entitiesDiff = nextEntityState.diffFromOtherState(prevEntityState);
 
-                // Forced commits are sent even if they are empty
-                if (isForce() || !entitiesDiff.isEmpty()) {
+                // Forced entities should be sent even if they are empty
+                if (entitiesDiff.isForced() && !commitAll || !entitiesDiff.isEmpty()) {
                     worldDiff.getEntityStateMap().put(entity, entitiesDiff);
                 }
             });

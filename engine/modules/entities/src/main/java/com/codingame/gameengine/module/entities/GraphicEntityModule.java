@@ -118,7 +118,7 @@ public class GraphicEntityModule implements Module {
      * 
      */
     public void commitWorldState(double t) {
-        commitEntityState(t, entities.toArray(new Entity[entities.size()]));
+        commitState(t, false, entities.toArray(new Entity[entities.size()]));
     }
 
     /**
@@ -137,6 +137,10 @@ public class GraphicEntityModule implements Module {
      * 
      */
     public void commitEntityState(double t, Entity<?>... entities) {
+        commitState(t, true, entities);
+    }
+    
+    private void commitState(double t, boolean force, Entity<?>... entities) {
         requireValidFrameInstant(t);
         requireNonEmpty(entities);
 
@@ -148,9 +152,13 @@ public class GraphicEntityModule implements Module {
             worldStates.put(actualT, state);
         }
 
-        final WorldState finalState = state;
-        Stream.of(entities).forEach(entity -> finalState.flushEntityState(entity));
-
+        // finalState is only used for the lambda right after it
+        flushAllEntityStates(entities, state, force);
+        
+    }
+    
+    private void flushAllEntityStates(Entity<?>[] entities, WorldState state, boolean force) {
+        Stream.of(entities).forEach(entity -> state.flushEntityState(entity, force));
     }
 
     private void requireNonEmpty(Object[] items) {
@@ -166,8 +174,8 @@ public class GraphicEntityModule implements Module {
     }
 
     private void sendFrameData() {
-        List<Object> commands = new ArrayList<>();
-
+        List<String> commands = new ArrayList<>();
+        String worldCommits = "W";
         autocommit();
 
         newSpriteSheets.forEach(e -> commands.add(gameSerializer.serializeLoadSpriteSheet(e)));
@@ -184,6 +192,9 @@ public class GraphicEntityModule implements Module {
             .collect(Collectors.toList());
 
         for (WorldState nextWorldState : orderedStates) {
+            if(nextWorldState.isCommitAll()) {
+                worldCommits += " " + nextWorldState.getFrameTime();
+            }
             WorldState worldStateDiff = nextWorldState.diffFromOtherWorldState(currentWorldState);
             worldStateDiff.getEntityStateMap().forEach((entity, diff) -> {
                 String serializedStateDiff = gameSerializer.serializeEntitiesStateDiff(entity, diff, worldStateDiff.getFrameTime());
@@ -194,12 +205,13 @@ public class GraphicEntityModule implements Module {
         }
 
         worldStates.clear();
+        commands.add(worldCommits);
 
         gameManager.setViewData("entitymodule", commands);
     }
 
     private void autocommit() {
-        WorldState state = worldStates.computeIfAbsent("1", (key) -> new WorldState("1", true));
+        WorldState state = worldStates.computeIfAbsent("1", (key) -> new WorldState("1"));
         state.flushMissingEntities(entities);
     }
 

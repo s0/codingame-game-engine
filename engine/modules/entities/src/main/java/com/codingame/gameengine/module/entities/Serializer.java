@@ -166,7 +166,7 @@ class Serializer {
         );
     }
 
-    public Object serializeLoadSpriteSheet(SpriteSheetLoader spriteSheet) {
+    public String serializeLoadSpriteSheet(SpriteSheetLoader spriteSheet) {
         return join(
             commands.get("LOADSPRITESHEET"), spriteSheet.getName(), spriteSheet.getSourceImage(),
             spriteSheet.getWidth(), spriteSheet.getHeight(), spriteSheet.getOrigRow(), spriteSheet.getOrigCol(), spriteSheet.getImageCount(),

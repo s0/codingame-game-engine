@@ -135,3 +135,16 @@ export class PropertiesCommand {
     entity.addState(this.t, {values: this.params, curve: this.curve}, frameNumber)
   }
 }
+export class WorldCommitCommand {
+  constructor (args, globalData) {
+    this.times = args.map(v => +v)
+  }
+
+  apply (entities, frameNumber) {
+    entities.forEach(entity => {
+      this.times.forEach(time => {
+        entity.addState(time, {values: {}, curve: {}}, frameNumber)
+      })
+    })
+  }
+}
