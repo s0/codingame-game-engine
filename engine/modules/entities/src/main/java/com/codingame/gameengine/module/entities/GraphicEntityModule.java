@@ -118,7 +118,7 @@ public class GraphicEntityModule implements Module {
      * 
      */
     public void commitWorldState(double t) {
-        commitState(t, false, entities.toArray(new Entity[entities.size()]));
+        commitState(t, false, true, entities.toArray(new Entity[entities.size()]));
     }
 
     /**
@@ -137,10 +137,10 @@ public class GraphicEntityModule implements Module {
      * 
      */
     public void commitEntityState(double t, Entity<?>... entities) {
-        commitState(t, true, entities);
+        commitState(t, true, false, entities);
     }
 
-    private void commitState(double t, boolean force, Entity<?>... entities) {
+    private void commitState(double t, boolean force, boolean commitAll, Entity<?>... entities) {
         requireValidFrameInstant(t);
         requireNonEmpty(entities);
 
@@ -151,6 +151,7 @@ public class GraphicEntityModule implements Module {
             state = new WorldState(actualT);
             worldStates.put(actualT, state);
         }
+        state.setCommitAll(commitAll);
 
         // finalState is only used for the lambda right after it
         flushAllEntityStates(entities, state, force);

@@ -8,7 +8,7 @@ import java.util.Optional;
 class WorldState {
     private Map<Entity<?>, EntityState> entityStateMap;
     private final String t;
-    private boolean commitAll;
+    private boolean commitAll = false;
 
     WorldState(String t) {
         this.t = t;
@@ -41,6 +41,7 @@ class WorldState {
     void setCommitAll(boolean commitAll) {
         this.commitAll = commitAll;
     }
+
     boolean isCommitAll() {
         return commitAll;
     }
