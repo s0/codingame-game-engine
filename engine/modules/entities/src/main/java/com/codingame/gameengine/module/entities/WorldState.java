@@ -54,16 +54,16 @@ class WorldState {
         }
     }
 
-    void flushEntityState(Entity<?> entity) {
+    void flushEntityState(Entity<?> entity, boolean force) {
         final EntityState state = entityStateMap.get(entity);
-        updateStateMap(state, entity.state, entity);
+        updateStateMap(state, entity.state, entity, force);
         entity.state = new EntityState();
     }
 
     void updateAllEntities(WorldState next) {
         next.entityStateMap.forEach((entity, nextState) -> {
             EntityState oldState = entityStateMap.get(entity);
-            updateStateMap(oldState, nextState, entity);
+            updateStateMap(oldState, nextState, entity, false);
         });
     }
 

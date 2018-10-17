@@ -10,9 +10,11 @@ import java.util.function.BiConsumer;
 
 class EntityState {
     Map<String, Param> map;
-
-    public EntityState(EntityState other) {
+    boolean force;
+    
+    public EntityState(EntityState other, boolean force) {
         map = new HashMap<>(other.map);
+        this.force = force;
     }
 
     static class Param {
@@ -74,7 +76,15 @@ class EntityState {
         if (optionalPrevState.isPresent()) {
             return diffFromNonNullOtherState(optionalPrevState.get());
         } else {
-            return new EntityState(this);
+            return new EntityState(this,force);
         }
+    }
+    
+    public boolean isForced() {
+        return force;
+    }
+
+    public void force() {
+        this.force = true;
     }
 }

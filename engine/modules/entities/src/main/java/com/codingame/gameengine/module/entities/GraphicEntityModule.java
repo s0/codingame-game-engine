@@ -156,6 +156,10 @@ public class GraphicEntityModule implements Module {
         flushAllEntityStates(entities, state);
 
     }
+    
+    private void flushAllEntityStates(Entity<?>[] entities, WorldState state, boolean force) {
+        Stream.of(entities).forEach(entity -> state.flushEntityState(entity, force));
+    }
 
     private void flushAllEntityStates(Entity<?>[] entities, WorldState state) {
         Stream.of(entities).forEach(entity -> state.flushEntityState(entity));
