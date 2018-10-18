@@ -107,9 +107,7 @@ public class GraphicEntityModule implements Module {
      * <p>
      * Only the most recent commits are kept for a given t.
      * </p>
-     * <p>
-     * If an entity hasn't changed since its previous commit, its commit is ignored.
-     * </p>
+     * 
      * 
      * @param t
      *            The instant of the frame 0 &ge; t &ge; 1.
@@ -126,7 +124,6 @@ public class GraphicEntityModule implements Module {
      * <p>
      * Only the most recent commit is kept for a given t.
      * <p>
-     * If the entity hasn't changed since its previous commit, the commit is ignored.
      * 
      * @param t
      *            The instant of the frame 0 &ge; t &ge; 1.
