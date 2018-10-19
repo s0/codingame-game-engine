@@ -23,7 +23,7 @@ function splitOnCharOutsideQuotes (text, charParam) {
       } else {
         current += char
       }
-    } else if (char === "'" && lastChar !== '\\') {
+    } else if (char === '"' && lastChar !== '\\') {
       inQuotes = !inQuotes
       current += char
     } else if (lastChar === '\\') {
