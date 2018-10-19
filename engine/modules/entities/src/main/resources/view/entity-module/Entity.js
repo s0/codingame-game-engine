@@ -34,8 +34,6 @@ export class Entity {
     if (!this.states[frame]) {
       this.states[frame] = []
     }
-    let state = Entity.createState(t, params.values, params.curve)
-
     let state = createState(t, params.curve, params.values)
 
     const collision = this.states[frame].find(v => v.t === t)
