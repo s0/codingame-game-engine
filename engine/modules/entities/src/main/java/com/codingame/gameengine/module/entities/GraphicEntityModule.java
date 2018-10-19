@@ -173,16 +173,13 @@ public class GraphicEntityModule implements Module {
     }
 
     private void sendFrameData() {
-        List<String> commands = new ArrayList<>();
-        String worldCommits = "W";
+
         autocommit();
 
-        newSpriteSheets.forEach(e -> commands.add(gameSerializer.serializeLoadSpriteSheet(e)));
+        String load = gameSerializer.serializeLoadSpriteSheets(newSpriteSheets);
         newSpriteSheets.clear();
 
-        newEntities.stream().forEach(e -> {
-            commands.add(gameSerializer.serializeCreateEntity(e));
-        });
+        String create = gameSerializer.serializeCreateEntities(newEntities);
         newEntities.clear();
 
         List<WorldState> orderedStates = worldStates.entrySet().stream()
@@ -190,25 +187,29 @@ public class GraphicEntityModule implements Module {
             .map(Entry::getValue)
             .collect(Collectors.toList());
 
+        List<String> worldCommitsBuilder = new ArrayList<>();
+        List<WorldState> updateBuilder = new ArrayList<>();
+
         for (WorldState nextWorldState : orderedStates) {
             if (nextWorldState.isCommitAll()) {
-                worldCommits += " " + nextWorldState.getFrameTime();
+                worldCommitsBuilder.add(nextWorldState.getFrameTime());
             }
             WorldState worldStateDiff = nextWorldState.diffFromOtherWorldState(currentWorldState);
-            worldStateDiff.getEntityStateMap().forEach((entity, diff) -> {
-                String serializedStateDiff = gameSerializer.serializeEntitiesStateDiff(entity, diff, worldStateDiff.getFrameTime());
-                commands.add(serializedStateDiff);
-            });
-
+            updateBuilder.add(worldStateDiff);
             currentWorldState.updateAllEntities(nextWorldState);
         }
 
-        worldStates.clear();
+        String worldCommits = gameSerializer.serializeWorldStateUpdates(worldCommitsBuilder);
 
-        if (worldCommits.length() > 1) {
-            commands.add(worldCommits);
-        }
-        gameManager.setViewData("entitymodule", commands);
+        String update = gameSerializer.serializeWorldDiff(updateBuilder);
+
+        worldStates.clear();
+        gameManager.setViewData(
+            "entitymodule",
+            Stream.of(load, create, update, worldCommits)
+                .filter(e -> !"".equals(e))
+                .collect(Collectors.joining("\n"))
+        );
     }
 
     private void autocommit() {
