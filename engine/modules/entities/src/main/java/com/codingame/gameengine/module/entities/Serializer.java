@@ -110,7 +110,7 @@ class Serializer {
      * Join multiple object into a space separated string
      */
     static private String join(Object... args) {
-        return Stream.of(args).map(String::valueOf).collect(Collectors.joining(" "));
+        return Stream.of(args).map(String::valueOf).filter(e->!"".equals(e)).collect(Collectors.joining(" "));
     }
 
     static String formatFrameTime(double t) {
@@ -126,9 +126,15 @@ class Serializer {
     }
 
     private String serializeEntitiesStateDiff(Entity<?> entity, EntityState diff, String frameInstant) {
-        return join(
+        String meta = join(
             entity.getId(),
-            frameInstant,
+            frameInstant
+        );
+        if(diff.isEmpty()){
+            return meta;
+        }
+        return join(
+            meta,
             minifyDiff(diff)
         );
     }
