@@ -2,6 +2,7 @@ import { CommandParser } from './CommandParser.js'
 import { fitAspectRatio } from '../core/utils.js'
 import { WIDTH, HEIGHT } from '../core/constants.js'
 import { ContainerBasedEntity } from './ContainerBasedEntity.js'
+import { Entity } from './Entity.js'
 
 export const api = {}
 
@@ -97,7 +98,7 @@ export class GraphicEntityModule {
 
         if (!subStates.length || this.lastElementOf(subStates).t !== 1) {
           // Create a subState at t=1
-          subStates.push({ ...currentState, t: 1 })
+          subStates.push(Entity.createState(1, currentState))
         }
       })
   }
