@@ -1,6 +1,13 @@
 import {CreateCommand, PropertiesCommand, LoadCommand, WorldCommitCommand} from './Command.js'
 
-function splitOnSpaceOutsideQuotes (text) {
+const COMMAND_KEY_MAP = {
+  C: CreateCommand,
+  U: PropertiesCommand,
+  L: LoadCommand,
+  W: WorldCommitCommand
+}
+
+function splitOnCharOutsideQuotes (text, charParam) {
   const res = []
   let current = ''
   let idx = 0
@@ -9,18 +16,19 @@ function splitOnSpaceOutsideQuotes (text) {
 
   while (idx < text.length) {
     const char = text[idx++]
-    if (char === ' ') {
+    if (char === charParam) {
       if (!inQuotes) {
         res.push(current)
         current = ''
       } else {
         current += char
       }
-    } else if (char === "'" && lastChar !== '\\') {
+    } else if (char === '"' && lastChar !== '\\') {
       inQuotes = !inQuotes
+      current += char
     } else if (lastChar === '\\') {
-      if (char === "'") {
-        current += "'"
+      if (char === '"') {
+        current += '\\"'
       } else {
         current += '\\' + char
       }
@@ -33,20 +41,25 @@ function splitOnSpaceOutsideQuotes (text) {
   return res
 };
 
+function getCommands (Type, text, globalData, frameInfo) {
+  const args = splitOnCharOutsideQuotes(text, ';')
+  let commands = []
+  args.forEach(command => commands.push(new Type(splitOnCharOutsideQuotes(command, ' '), globalData, frameInfo)))
+  return commands
+}
 export class CommandParser {
   static parse (line, globalData, frameInfo) {
-    const args = splitOnSpaceOutsideQuotes(line)
-    const keyword = args[0]
-    if (keyword === 'C') {
-      return new CreateCommand(args.slice(1), globalData)
-    } else if (keyword === 'U') {
-      return new PropertiesCommand(args.slice(1), globalData, frameInfo)
-    } else if (keyword === 'L') {
-      return new LoadCommand(args.slice(1), globalData)
-    } else if (keyword === 'W') {
-      return new WorldCommitCommand(args.slice(1), globalData)
-    } else {
-      throw new Error('Unrecognised command : ' + keyword)
+    let commands = []
+    const commandChunks = line.split('\n')
+
+    for (const i in commandChunks) {
+      const type = COMMAND_KEY_MAP[commandChunks[i][0]]
+      if (type) {
+        commands = [...commands, ...getCommands(type, commandChunks[i].slice(1), globalData, frameInfo)]
+      } else {
+        throw new Error('Unrecognised command : ' + commandChunks[i][0])
+      }
     }
+    return commands
   }
 }

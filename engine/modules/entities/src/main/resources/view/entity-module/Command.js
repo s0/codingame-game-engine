@@ -25,7 +25,7 @@ const PROPERTY_KEY_MAP = {
   ff: 'fontFamily',
   s: 'fontSize',
   T: 'text',
-  C: 'children',
+  ch: 'children',
   sx: 'scaleX',
   sy: 'scaleY',
   ax: 'anchorX',
@@ -51,6 +51,18 @@ export class CreateCommand {
     let entity = EntityFactory.create(this.type)
     entity.id = this.id
     entities.set(this.id, entity)
+  }
+}
+
+export class CreateCommands {
+  constructor (args, globalData) {
+    this.commands = []
+    this.id = ++globalData.instanceCount
+    this.type = args[0]
+  }
+
+  apply (entities, frameNumber) {
+    this.commands.forEach(command => command.apply(entities, frameNumber))
   }
 }
 
