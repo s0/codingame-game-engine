@@ -34,7 +34,7 @@ export class Entity {
     if (!this.states[frame]) {
       this.states[frame] = []
     }
-    let state = createState(t, params.curve, params.values)
+    let state = Entity.createState(t, params.values, params.curve)
 
     const collision = this.states[frame].find(v => v.t === t)
     if (collision && Object.keys(state.curve).length === 0) {
@@ -156,13 +156,5 @@ export class Entity {
 }
 
 function isStateEmpty (state) {
-  return Object.keys(state).length === Object.keys(createState()).length
-}
-
-function createState (time = 1, curve = {}, values = {}) {
-  return {
-    t: time,
-    curve: curve,
-    ...values
-  }
+  return Object.keys(state).length === Object.keys(Entity.createState()).length
 }
