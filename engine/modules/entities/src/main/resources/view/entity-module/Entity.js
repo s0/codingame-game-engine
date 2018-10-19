@@ -34,10 +34,12 @@ export class Entity {
     if (!this.states[frame]) {
       this.states[frame] = []
     }
-
     let state = createState(t, params.curve, params.values)
 
     const collision = this.states[frame].find(v => v.t === t)
+    if (collision && Object.keys(state.curve).length === 0) {
+      state.curve = collision.curve
+    }
     if (collision) {
       if (!isStateEmpty(state) && !isStateEmpty(collision)) {
         ErrorLog.push(new Error('Different updates for same t ' + t))
