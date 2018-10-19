@@ -126,7 +126,7 @@ class Serializer {
      * Join multiple object into a space separated string
      */
     static private String join(Object... args) {
-        return Stream.of(args).map(String::valueOf).collect(Collectors.joining(" "));
+        return Stream.of(args).map(String::valueOf).filter(e->!"".equals(e)).collect(Collectors.joining(" "));
     }
 
     static String formatFrameTime(double t) {
