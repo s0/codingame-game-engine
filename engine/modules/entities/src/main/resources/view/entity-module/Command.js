@@ -35,6 +35,7 @@ const PROPERTY_KEY_MAP = {
   b: 'blendMode',
   I: 'images',
   p: 'started',
+  pa: 'paused',
   l: 'loop',
   d: 'duration',
   bw: 'baseWidth',

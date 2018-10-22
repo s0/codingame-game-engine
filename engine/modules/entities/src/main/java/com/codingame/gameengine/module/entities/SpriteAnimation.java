@@ -63,9 +63,9 @@ public class SpriteAnimation extends TextureBasedEntity<SpriteAnimation> impleme
         this.started = started;
 
         if (started) {
-            set("started", START_INDEX, null);
+            set("paused", false, null);
         } else {
-            set("started", "", null);
+            set("paused", true, null);
         }
         return this;
     }
@@ -76,7 +76,7 @@ public class SpriteAnimation extends TextureBasedEntity<SpriteAnimation> impleme
      * @return this animation.
      */
     public SpriteAnimation reset() {
-        START_INDEX++;
+        set("started", 1, null); // the 1 value is just here because we need to send some data
         return setStarted(true);
     }
 

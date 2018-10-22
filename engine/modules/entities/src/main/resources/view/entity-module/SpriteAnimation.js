@@ -8,17 +8,27 @@ import { unlerp, unlerpUnclamped } from '../core/utils.js'
 export class SpriteAnimation extends TextureBasedEntity {
   constructor () {
     super()
+    this.previousState = this.defaultState
     Object.assign(this.defaultState, {
       images: '',
       loop: false,
       duration: 1000,
-      started: null
+      paused: true,
+      started: null,
+      animationProgress: 
     })
   }
 
   initDisplay () {
     super.initDisplay()
     this.graphics = new PIXI.Sprite(PIXI.Texture.EMPTY)
+  }
+
+  addState (t, params, frame) {
+    super.addState(t, params, frame)
+    const toModify = this.states[frame].find(v => v.t === t)
+    toModify.animationProgress = this.getAnimationProgress(this.previousState.animationProgress)
+    this.previousState = toModify
   }
 
   updateDisplay (state, changed, globalData, frame, progress) {
@@ -43,5 +53,9 @@ export class SpriteAnimation extends TextureBasedEntity {
     } else {
       this.graphics.texture = PIXI.Texture.EMPTY
     }
+  }
+
+  getAnimationProgress () {
+    return 0
   }
 }
