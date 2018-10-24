@@ -70,7 +70,7 @@ export const PROPERTIES = {
     },
     lerpMethod: noLerp
   },
-
+  paused: boolOpts,
   duration: constOpts,
   blendMode: constOpts,
 

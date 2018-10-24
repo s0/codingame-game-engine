@@ -8,15 +8,22 @@ import { unlerp, unlerpUnclamped } from '../core/utils.js'
 export class SpriteAnimation extends TextureBasedEntity {
   constructor () {
     super()
-    this.previousState = this.defaultState
     Object.assign(this.defaultState, {
       images: '',
       loop: false,
       duration: 1000,
-      paused: true,
+      paused: false,
       started: null,
-      animationProgress: 
+      animationProgressTime: 0,
+      date: 0
     })
+  }
+
+  initData (state) {
+    state.started = {
+      date: state.date
+    }
+    state.animationProgressTime = state.date
   }
 
   initDisplay () {
@@ -24,23 +31,25 @@ export class SpriteAnimation extends TextureBasedEntity {
     this.graphics = new PIXI.Sprite(PIXI.Texture.EMPTY)
   }
 
-  addState (t, params, frame) {
+  addState (t, params, frame, frameInfo) {
     super.addState(t, params, frame)
     const toModify = this.states[frame].find(v => v.t === t)
-    toModify.animationProgress = this.getAnimationProgress(this.previousState.animationProgress)
-    this.previousState = toModify
+    const date = frameInfo.date + frameInfo.frameDuration * t
+    toModify.date = date
   }
 
   updateDisplay (state, changed, globalData, frame, progress) {
     super.updateDisplay(state, changed, globalData)
 
-    if (state.images && state.started) {
+    if (state.images) {
       const duration = state.duration
-      const date = frame.date + progress * frame.frameDuration
-      const startDate = state.started.date
+      let startDate = 0
+      if (state.started && state.started.date) {
+        startDate = state.started.date
+      }
       const images = state.images.split(',')
 
-      const animationProgress = (state.loop ? unlerpUnclamped : unlerp)(startDate, startDate + duration, date)
+      const animationProgress = (state.loop ? unlerpUnclamped : unlerp)(startDate, startDate + duration, state.animationProgressTime)
       if (animationProgress >= 0) {
         const animationIndex = Math.floor(images.length * animationProgress)
         const image = state.loop ? images[animationIndex % images.length] : (images[animationIndex] || images[images.length - 1])
@@ -55,7 +64,15 @@ export class SpriteAnimation extends TextureBasedEntity {
     }
   }
 
-  getAnimationProgress () {
-    return 0
+  addAnimationProgressTime (prevState, currState) {
+    currState.animationProgressTime = this.getAnimationProgressTime(prevState.paused, prevState.animationProgressTime, currState.date, prevState.date)
+  }
+
+  getAnimationProgressTime (paused, prevProgressTime, currentDate, prevDate) {
+    if (paused) {
+      return prevProgressTime
+    } else {
+      return prevProgressTime + currentDate - prevDate
+    }
   }
 }
