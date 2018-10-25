@@ -13,7 +13,7 @@ public class SpriteAnimation extends TextureBasedEntity<SpriteAnimation> impleme
 
     @Inject GraphicEntityModule entityModule;
 
-    private int START_INDEX = 0;
+    private int RESTART_INDEX = 1;
 
     private String[] images = new String[] {};
 
@@ -76,7 +76,8 @@ public class SpriteAnimation extends TextureBasedEntity<SpriteAnimation> impleme
      * @return this animation.
      */
     public SpriteAnimation reset() {
-        set("started", 1, null); // the 1 value is just here because we need to send some data
+        set("restarted", -RESTART_INDEX, null);
+        RESTART_INDEX++;
         return setStarted(true);
     }
 

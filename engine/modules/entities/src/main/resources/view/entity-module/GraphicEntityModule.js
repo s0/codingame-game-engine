@@ -99,17 +99,13 @@ export class GraphicEntityModule {
         // If the entity had a state in the previous frame get the last one of them
         if (entity.states[previousFrameNumber] && previousFrameNumber !== frameNumber) {
           prevState = entity.states[previousFrameNumber][entity.states[previousFrameNumber].length - 1]
-        } else if (!entity.states[previousFrameNumber] || previousFrameNumber === frameNumber) {
-          if (typeof entity.initData === 'function') {
-            entity.initData(entity.states[frameNumber][0])
-          }
         }
         for (const state of subStates) {
           // Extrapolate through existing substates, updating the extrapolationMap in the process (currentState)
           Object.assign(currentState, state)
           Object.assign(state, currentState)
-          if (typeof entity.addAnimationProgressTime === 'function') {
-            entity.addAnimationProgressTime(prevState, state)
+          if (typeof entity.computeAnimationProgressTime === 'function') {
+            entity.computeAnimationProgressTime(prevState, state)
           }
           prevState = state
         }

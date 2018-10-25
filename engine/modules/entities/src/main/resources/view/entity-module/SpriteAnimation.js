@@ -13,17 +13,9 @@ export class SpriteAnimation extends TextureBasedEntity {
       loop: false,
       duration: 1000,
       paused: false,
-      started: null,
       animationProgressTime: 0,
       date: 0
     })
-  }
-
-  initData (state) {
-    state.started = {
-      date: state.date
-    }
-    state.animationProgressTime = state.date
   }
 
   initDisplay () {
@@ -43,13 +35,9 @@ export class SpriteAnimation extends TextureBasedEntity {
 
     if (state.images) {
       const duration = state.duration
-      let startDate = 0
-      if (state.started && state.started.date) {
-        startDate = state.started.date
-      }
       const images = state.images.split(',')
 
-      const animationProgress = (state.loop ? unlerpUnclamped : unlerp)(startDate, startDate + duration, state.animationProgressTime)
+      const animationProgress = (state.loop ? unlerpUnclamped : unlerp)(0, duration, state.animationProgressTime)
       if (animationProgress >= 0) {
         const animationIndex = Math.floor(images.length * animationProgress)
         const image = state.loop ? images[animationIndex % images.length] : (images[animationIndex] || images[images.length - 1])
@@ -64,15 +52,14 @@ export class SpriteAnimation extends TextureBasedEntity {
     }
   }
 
-  addAnimationProgressTime (prevState, currState) {
-    currState.animationProgressTime = this.getAnimationProgressTime(prevState.paused, prevState.animationProgressTime, currState.date, prevState.date)
-  }
-
-  getAnimationProgressTime (paused, prevProgressTime, currentDate, prevDate) {
-    if (paused) {
-      return prevProgressTime
+  computeAnimationProgressTime (prevState, currState) {
+    if (currState.restarted && currState.restarted.date === currState.date) {
+      currState.animationProgressTime = 0
     } else {
-      return prevProgressTime + currentDate - prevDate
+      currState.animationProgressTime = prevState.animationProgressTime
+      if (!prevState.paused) {
+        currState.animationProgressTime += currState.date - prevState.date
+      }
     }
   }
 }
